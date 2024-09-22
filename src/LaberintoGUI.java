@@ -1,15 +1,20 @@
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Color;
+
 
 public class LaberintoGUI extends JPanel {
-    private int[][] laberinto;
+    private int[][] maze;
 
-    // Tamaño de cada celda en píxeles
-    private static final int CELDA_SIZE = 20;
+    // Size of Cells in PX
+    private static final int CELL_SIZE = 20;
 
-    public LaberintoGUI(int[][] laberinto) {
-        this.laberinto = laberinto;
-        setPreferredSize(new Dimension(laberinto[0].length * CELDA_SIZE, laberinto.length * CELDA_SIZE));
+    public LaberintoGUI(int[][] maze) {
+        this.maze = maze;
+        setPreferredSize(new Dimension(maze[0].length * CELL_SIZE, maze.length * CELL_SIZE));
     }
 
     @Override
@@ -17,39 +22,31 @@ public class LaberintoGUI extends JPanel {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g;
 
-        for (int i = 0; i < laberinto.length; i++) {
-            for (int j = 0; j < laberinto[i].length; j++) {
-                Color color;
-                switch (laberinto[i][j]) {
-                    case 1:
-                        color = Color.BLACK; // Muro
-                        break;
-                    case 2:
-                        color = Color.YELLOW; // Camino
-                        break;
-                    case 3:
-                        color = Color.RED; // Salida
-                        break;
-                    default:
-                        color = Color.CYAN; // Libre
-                        break;
-                }
+        for (int i = 0; i < maze.length; i++) {
+            for (int j = 0; j < maze[i].length; j++) {
+                Color color = switch (maze[i][j]) {
+                    case 1 -> Color.BLACK; // Wall
+                    case 2 -> Color.YELLOW; // Path
+                    case 3 -> Color.RED; // Exits
+                    case 4 -> Color.GREEN; // Start
+                    default -> Color.CYAN; // Clean
+                };
                 g2d.setColor(color);
-                g2d.fillRect(j * CELDA_SIZE, i * CELDA_SIZE, CELDA_SIZE, CELDA_SIZE);
+                g2d.fillRect(j * CELL_SIZE, i * CELL_SIZE, CELL_SIZE, CELL_SIZE);
 
-                // Dibujar contorno (borde) alrededor de la celda
+                // Draw cell borders
                 g2d.setColor(Color.LIGHT_GRAY);
-                g2d.drawRect(j * CELDA_SIZE, i * CELDA_SIZE, CELDA_SIZE, CELDA_SIZE);
+                g2d.drawRect(j * CELL_SIZE, i * CELL_SIZE, CELL_SIZE, CELL_SIZE);
             }
         }
     }
 
-    public static void mostrarLaberintoEnVentana(int[][] laberinto) {
-        JFrame frame = new JFrame("Laberinto");
-        LaberintoGUI panel = new LaberintoGUI(laberinto);
+    public void showMazeInWindow(int[][] maze, int length) {
+        JFrame frame = new JFrame("Maze "+ length);
+        LaberintoGUI panel = new LaberintoGUI(maze);
         frame.add(panel);
         frame.pack();
-        frame.setLocationRelativeTo(null); // Centra la ventana
+        frame.setLocationRelativeTo(null); // Center window
         frame.setVisible(true);
     }
 }

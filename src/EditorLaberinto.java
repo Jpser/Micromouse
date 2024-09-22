@@ -1,13 +1,21 @@
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.BorderFactory;
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
+import java.awt.GridLayout;
+import java.awt.Dimension;
+import java.awt.Color;
+import java.awt.BorderLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 
 public class EditorLaberinto {
     // Tamaño del laberinto
-    static final int N = 16;
-    static final int M = 16;
+    static final int N = 32;
+    static final int M = 32;
     static int[][] laberinto = new int[N][M];
     private JButton[][] botones;
     private boolean dibujando = false; // Estado de dibujo
@@ -29,14 +37,14 @@ public class EditorLaberinto {
             for (int j = 0; j < M; j++) {
                 botones[i][j] = new JButton();
                 botones[i][j].setPreferredSize(new Dimension(20, 20));
-                laberinto = Laberinto.laberinto;
-                if(Laberinto.laberinto[i][j] == 0) {
+                laberinto = Laberinto.maze;
+                if(Laberinto.maze[i][j] == 0) {
                     botones[i][j].setBackground(Color.WHITE);
-                } else if (Laberinto.laberinto[i][j] == 1) {
+                } else if (Laberinto.maze[i][j] == 1) {
                     botones[i][j].setBackground(Color.BLACK);
-                } else if (Laberinto.laberinto[i][j] == 3) {
+                } else if (Laberinto.maze[i][j] == 3) {
                     botones[i][j].setBackground(Color.RED);
-                }else if (Laberinto.laberinto[i][j] == 4) {
+                }else if (Laberinto.maze[i][j] == 4) {
                     botones[i][j].setBackground(Color.GREEN);
                 }
                 botones[i][j].setBorder(BorderFactory.createLineBorder(Color.GRAY));
@@ -83,11 +91,11 @@ public class EditorLaberinto {
         }
 
         JPanel controlPanel = new JPanel();
-        JButton resetButton = new JButton("Restablecer");
-        JButton murosButton = new JButton("Colocar Muros");
-        JButton entradaButton = new JButton("Colocar Entrada");
-        JButton salidaButton = new JButton("Colocar Salidas");
-        JButton copiarButton = new JButton("Generar Laberinto");
+        JButton resetButton = new JButton("Reset");
+        JButton murosButton = new JButton("Set Walls");
+        JButton entradaButton = new JButton("Set Start");
+        JButton salidaButton = new JButton("Set Exists");
+        JButton copiarButton = new JButton("Run Maze");
 
         // ActionListener para restablecer el laberinto
         resetButton.addActionListener(e -> {
@@ -101,19 +109,19 @@ public class EditorLaberinto {
         });
 
         // ActionListener para activar/desactivar colocación de muros
-        murosButton.addActionListener(e -> colocarMuros(!colocandoMuros));
+        murosButton.addActionListener(e -> setState(!colocandoMuros, "walls"));
 
         // ActionListener para activar/desactivar colocación de entrada
         entradaButton.addActionListener(e -> {
             if (entradaColocada) {
                 JOptionPane.showMessageDialog(frame, "La entrada ya está colocada.");
             } else {
-                colocarEntrada(!colocandoEntrada);
+                setState(!colocandoEntrada, "start");
             }
         });
 
         // ActionListener para activar/desactivar colocación de salida
-        salidaButton.addActionListener(e -> colocarSalida(!colocandoSalida));
+        salidaButton.addActionListener(e -> setState(!colocandoSalida, "exits"));
 
         // ActionListener para copiar la matriz del laberinto
         copiarButton.addActionListener(e -> copiarLaberinto());
@@ -177,30 +185,22 @@ public class EditorLaberinto {
         return -1;
     }
 
-    private void colocarMuros(boolean estado) {
-        colocandoMuros = estado;
-        if (estado) {
-            System.out.println("Modo de colocación de muros activado.");
-        } else {
-            System.out.println("Modo de colocación de muros desactivado.");
-        }
-    }
 
-    private void colocarEntrada(boolean estado) {
-        colocandoEntrada = estado;
-        if (estado) {
-            System.out.println("Modo de colocación de entrada activado.");
-        } else {
-            System.out.println("Modo de colocación de entrada desactivado.");
+    private void setState(boolean estado, String type) {
+        switch(type){
+            case "walls":
+                colocandoMuros = estado;
+                break;
+            case "start":
+                colocandoEntrada = estado;
+            case "exits":
+                colocandoSalida = estado;
         }
-    }
 
-    private void colocarSalida(boolean estado) {
-        colocandoSalida = estado;
         if (estado) {
-            System.out.println("Modo de colocación de salidas activado.");
+            System.out.println("Modo de colocación de " + type + " activado.");
         } else {
-            System.out.println("Modo de colocación de salidas desactivado.");
+            System.out.println("Modo de colocación de " + type + " desactivado.");
         }
     }
 
@@ -212,7 +212,7 @@ public class EditorLaberinto {
         }
 
         // Puedes guardar esta copia en una variable estática o global accesible desde otras clases
-        Laberinto.setLaberinto(laberintoCopia);
+        Laberinto.setMaze(laberintoCopia);
     }
 
     public static void main(String[] args) {
