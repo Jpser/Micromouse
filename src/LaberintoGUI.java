@@ -7,7 +7,7 @@ import java.awt.Color;
 
 
 public class LaberintoGUI extends JPanel {
-    private int[][] maze;
+    private final int[][] maze;
 
     // Size of Cells in PX
     private static final int CELL_SIZE = 20;
@@ -29,6 +29,7 @@ public class LaberintoGUI extends JPanel {
                     case 2 -> Color.YELLOW; // Path
                     case 3 -> Color.RED; // Exits
                     case 4 -> Color.GREEN; // Start
+                    case 5 -> Color.LIGHT_GRAY; // Back tracking
                     default -> Color.CYAN; // Clean
                 };
                 g2d.setColor(color);

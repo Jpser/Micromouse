@@ -143,6 +143,7 @@ public class EditorLaberinto {
         int col = getButtonCol(boton);
 
         if (colocandoMuros) {
+            colocandoSalida =false;
             boton.setBackground(Color.BLACK);
             laberinto[row][col] = 1; // Muro
         } else if (colocandoEntrada) {
@@ -190,11 +191,13 @@ public class EditorLaberinto {
         switch(type){
             case "walls":
                 colocandoMuros = estado;
+                colocandoSalida =false;
                 break;
             case "start":
                 colocandoEntrada = estado;
             case "exits":
                 colocandoSalida = estado;
+                colocandoMuros = false;
         }
 
         if (estado) {
