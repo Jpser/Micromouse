@@ -1,6 +1,8 @@
 import javax.swing.SwingUtilities;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Laberinto {
     // Tamaño del laberinto
@@ -9,8 +11,6 @@ public class Laberinto {
     static int[][] maze = new int[N][M];
 
     static LaberintoGUI mazeGUI = new LaberintoGUI(maze);
-    static Duration maxDuration = Duration.ofMinutes(1);
-    static Instant startTime;
 
     // Posición de la entrada y salida
     static int startX = 1, startY = 1;
@@ -60,9 +60,7 @@ public class Laberinto {
 
     public static void initMaze() {
         for (int i = 0; i < N; i++) {
-            for (int j = 0; j < M; j++) {
-                maze[i][j] = initialMaze[i][j];
-            }
+            if (M >= 0) System.arraycopy(initialMaze[i], 0, maze[i], 0, M);
         }
         maze[startX][startY] = 4; // Entrada
         maze[exitX][exitY] = 3; // Salida
@@ -79,9 +77,9 @@ public class Laberinto {
                     System.out.print("* "); // Camino recorrido
                 } else if (maze[i][j] == 3) {
                     System.out.print("S "); // Salida
-                }else if (maze[i][j] == 4) {
+                } else if (maze[i][j] == 4) {
                     System.out.print("* "); // Salida
-                }else if (maze[i][j] == 5) {
+                } else if (maze[i][j] == 5) {
                     System.out.print("X "); // Salida
                 }
             }
@@ -110,16 +108,22 @@ public class Laberinto {
         }
     }
 
-    public static void reduceMaze(int[][] maze) {
-        for (int i = 0; i < maze.length; i++) {
-            for (int j = 0; j < maze.length; j++) {
-                if (maze[i][j] == 2) {
-                    maze[i][j] = 0;
-                }
-                if (maze[i][j] == 5) {
-                    maze[i][j] = 1;
+    public static void optimizedPath(int[][] optimizedMaze) {
+        List<int[]> pathPositions = new ArrayList<>();
+
+        // Traverse through the 2D array to find positions with value 2
+        for (int i = 0; i < optimizedMaze.length; i++) {          // Iterate through rows
+            for (int j = 0; j < optimizedMaze[i].length; j++) {    // Iterate through columns
+                if (optimizedMaze[i][j] == 2) {                    // Check if the value is 2
+                    pathPositions.add(new int[]{i, j});            // Add position to the list
                 }
             }
+        }
+
+        int lenght = 1;
+        for (int[] position : pathPositions) {
+            floodFill(position[0], position[1], lenght);
+            lenght++;
         }
     }
 
@@ -140,24 +144,28 @@ public class Laberinto {
         exitXFound = -1;
         exitYFound = -1;
         runMaze();
+        int[][] auxPath = copyMaze(bestPath);
+        showSolution(auxPath); //first solution
         clearMaze(bestPath);
         maze = bestPath;
-        runMaze(); //with exit finded.
-        reduceMaze(bestPath);
+        runMaze(); //with exit founded.
+        int[][] auxPath2 = bestPath != null ? copyMaze(bestPath) : maze;
+        showSolution(auxPath2);//improved solution
+        int[][] mazeToOptimize = bestPath != null ? copyMaze(bestPath) : maze;
+        clearMaze(bestPath);
         maze = bestPath;
-        runMaze();
-        showSolution();
+        copyMaze(maze);
+        pathMin = Integer.MAX_VALUE;
+        bestPath = null;
+        optimizedPath(mazeToOptimize);
+        int[][] auxPath3 = bestPath != null ? copyMaze(bestPath) : maze;
+        showSolution(auxPath3); //new best solution.
     }
 
     // Metodo recursivo de Flood Fill que acepta movimientos diagonales
     public static boolean floodFill(int x, int y, int length) {
-
-        if (Duration.between(startTime, Instant.now()).compareTo(maxDuration) > 0) {
-            System.out.println("Time limit exceeded. Stopping execution.");
-            return true; // Return true to stop the current branch.
-        }
         // Verify limits of maze.
-        if (x < 0 || x >= N || y < 0 || y >= M ) {
+        if (x < 0 || x >= N || y < 0 || y >= M) {
             return false;
         }
 
@@ -165,7 +173,6 @@ public class Laberinto {
         if (maze[x][y] == 3) {
             pathMin = length;
             bestPath = copyMaze(maze); // Guarda la mejor ruta
-            startTime = Instant.now();
             exitXFound = x;
             exitYFound = y;
             return true;
@@ -183,14 +190,14 @@ public class Laberinto {
         // Define the directions array to prioritize movement towards the exit
         boolean found = false;
         int[][] directions;
-        if(exitXFound != -1){
-             directions = getDirections(x, y);
-        }else {
+        if (exitXFound != -1 && exitYFound != -1) {
+            directions = getDirections(x, y);
+        } else {
             directions = new int[][]{
                     {1, 0}, {-1, 0},
                     {0, 1}, {0, -1},
                     {-1, -1}, {1, 1},
-                    {-1, 1},{1, -1},
+                    {-1, 1}, {1, -1},
             };
         }
 
@@ -208,57 +215,46 @@ public class Laberinto {
     }
 
     private static int[][] getDirections(int x, int y) {
-        int[][] directions;
-        if(exitX == x){
-            directions= new int[][] {
-                    {0, exitYFound > y ? 1 : -1},
-                    {exitXFound > x ? 1 : -1, 0},
-                    {1, 0}, {-1, 0},  // Rest of the directions
-                    {0, 1}, {0, -1},
-                    {exitXFound > x ? 1 : -1, exitYFound > y ? 1 : -1}
-            };
+        // Prioritize the movement direction towards the exit based on current and exit positions
+
+        int deltaX = Integer.compare(exitXFound, x); // -1 if exit is to the left, 1 if to the right, 0 if aligned
+        int deltaY = Integer.compare(exitYFound, y); // -1 if exit is above, 1 if below, 0 if aligned
+
+        if (x == exitXFound && y == exitYFound) {
+            return new int[0][0]; // Return an empty array to indicate no further movement needed
         }
-        if(exitY == y){
-            directions= new int[][] {
-                    {exitXFound > x ? 1 : -1, 0},
-                    {0, exitYFound > y ? 1 : -1},
-                    {1, 0}, {-1, 0},
-                    {0, 1}, {0, -1},
-                    {exitXFound > x ? 1 : -1, exitYFound > y ? 1 : -1}
-            };
-        }
-        else{
-            directions= new int[][]{
-                    {exitX > x ? 1 : -1, exitY > y ? 1 : -1},
-                    {0, exitY > y ? 1 : -1},
-                    {1, 0}, {-1, 0},  // Rest of the directions
-                    {0, 1}, {0, -1},
-                    {exitX > x ? 1 : -1, 0},
-            };
-        }
-        return directions;
+        // Create the direction priorities based on calculated deltas
+        return new int[][]{
+                {deltaX, deltaY},         // Move diagonally towards the exit
+                {deltaX, 0},              // Move horizontally towards the exit
+                {0, deltaY},              // Move vertically towards the exit
+                {deltaX, deltaY == 0 ? 1 : deltaY},  // Adjust diagonals for cases when deltaY is zero
+                {deltaX == 0 ? 1 : deltaX, deltaY},  // Adjust diagonals for cases when deltaX is zero
+                {deltaX, -deltaY},        // Opposite diagonal
+                {-deltaX, deltaY},        // Opposite horizontal or vertical
+                {deltaX == 0 ? 1 : deltaX, 0}, // Straight horizontal
+                {0, deltaY == 0 ? 1 : deltaY},  // Straight vertical
+                {1, 0}, {0, 1}
+        };
     }
 
     public static int[][] copyMaze(int[][] originalMaze) {
         int[][] copy = new int[N][M];
         for (int i = 0; i < N; i++) {
-            for (int j = 0; j < M; j++) {
-                copy[i][j] = originalMaze[i][j];
-            }
+            if (M >= 0) System.arraycopy(originalMaze[i], 0, copy[i], 0, M);
         }
         return copy;
     }
 
     public static void runMaze() {
         // Crea una copia del laberinto para el algoritmo floodFill
-        startTime = Instant.now(); // Set start time before floodFill begins
         copyMaze(maze);
         pathMin = Integer.MAX_VALUE;
         bestPath = null;
         floodFill(startX, startY, 0);
     }
 
-    private static void showSolution() {
+    private static void showSolution(int[][] bestPath) {
         if (bestPath != null) {
             System.out.println("Best solution founded, showing in window");
             mazeGUI.showMazeInWindow(bestPath, pathMin);
